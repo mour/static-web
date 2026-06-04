@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bé Tự Tạo Phép Tính Cộng - Giải Cứu Thỏ Con</title>
+    <style>
+        body {
+            margin: 0; padding: 0;
+            background: linear-gradient(to bottom, #A1C4FD, #C2E9FB);
+            font-family: 'Arial Rounded MT Bold', 'Comic Sans MS', sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; overflow: hidden;
+            user-select: none;
+        }
+
+        #game-container {
+            background: white;
+            border: 8px solid #FFB6C1;
+            border-radius: 30px;
+            padding: 15px;
+            width: 480px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            position: relative;
+        }
+
+        h1 {
+            color: #FF1493; font-size: 24px; margin: 5px 0;
+            text-shadow: 2px 2px #FFE4E1;
+        }
+
+        p.instruction { color: #555; font-size: 14px; margin: 5px 0 15px 0; }
+
+        /* --- KHO CHỨA CÀ RỐT BAN ĐẦU --- */
+        #carrot-storage {
+            background: #E8F5E9;
+            border: 3px dashed #81C784;
+            border-radius: 20px;
+            padding: 10px;
+            min-height: 60px;
+            display: flex; flex-wrap: wrap;
+            justify-content: center; gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .carrot {
+            font-size: 32px; cursor: grab;
+            transition: transform 0.2s; display: inline-block;
+            touch-action: none;
+        }
+        .carrot:active { cursor: grabbing; transform: scale(1.2); }
+
+        /* --- KHU VỰC 2 ĐĨA THỨ CĂN --- */
+        .dishes-container {
+            display: flex; justify-content: space-between; gap: 15px; margin: 15px 0;
+        }
+
+        .drop-zone {
+            background: #FFF8E1;
+            border: 4px solid #FFB300;
+            border-radius: 20px;
+            padding: 15px 10px;
+            min-height: 80px; width: 45%;
+            display: flex; flex-wrap: wrap;
+            justify-content: center; align-items: center;
+            gap: 6px; position: relative;
+            box-shadow: inset 0 4px 8px rgba(0,0,0,0.05);
+        }
+        #plate-1::before { content: "🍽️ ĐĨA SỐ 1"; position: absolute; top: 4px; font-size: 10px; color: #FFA000; font-weight: bold; }
+        #plate-2::before { content: "🍽️ ĐĨA SỐ 2"; position: absolute; top: 4px; font-size: 10px; color: #FFA000; font-weight: bold; }
+
+        /* --- HIỂN THỊ PHÉP TOÁN --- */
+        #math-display {
+            font-size: 38px; color: #333; background: #FFF0F5;
+            border-radius: 20px; padding: 10px; margin: 15px 0;
+            border: 3px dashed #FF69B4; display: inline-block; min-width: 250px;
+        }
+        .highlight { color: #FF5722; font-weight: bold; }
+
+        /* --- BẠN THỎ VÀ HIỆU ỨNG LẮC ĐẦU BUỒN --- */
+        #bunny-status { 
+            font-size: 45px; margin: 10px 0; 
+            display: inline-block; transition: all 0.3s;
+        }
+        
+        /* Hiệu ứng rung đầu buồn bã khi làm sai */
+        .sad-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px) rotate(-5deg); }
+            40%, 80% { transform: translateX(10px) rotate(5deg); }
+        }
+
+        /* --- BONG BÓNG ĐÁP ÁN --- */
+        #options-container { display: flex; justify-content: space-around; margin-top: 20px; min-height: 110px;}
+        .balloon-btn {
+            width: 75px; height: 95px;
+            border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
+            border: none; font-size: 30px; font-weight: bold; color: white;
+            cursor: pointer; box-shadow: inset -5px -10px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.1);
+            position: relative; transition: transform 0.1s;
+        }
+        .balloon-btn:disabled { cursor: not-allowed; }
+        .balloon-btn:active { transform: scale(0.9); }
+        .balloon-btn::after { content: "🎈"; position: absolute; bottom: -24px; left: 26px; font-size: 18px; }
+        .bg-0 { background-color: #FF6B6B; }
+        .bg-1 { background-color: #4D96FF; }
+        .bg-2 { background-color: #6BCB77; }
+
+        #feedback { font-size: 22px; font-weight: bold; height: 35px; margin-top: 10px; }
+        
+        .btn-reset {
+            background: #4FC3F7; color: white; border: none;
+            padding: 8px 20px; font-size: 15px; border-radius: 20px;
+            cursor: pointer; font-weight: bold; margin-top: 5px;
+        }
+    </style>
+    
+    <!-- Nhúng thư viện pháo hoa tự động siêu nhẹ từ CDN (Hoàn toàn an toàn cho Webview/Android) -->
+    <script src="https://jsdelivr.net"></script>
+</head>
+<body>
+
+<div id="game-container">
+    <h1>🐰 BÉ TỰ TẠO PHÉP TOÁN 🥕</h1>
+    <p class="instruction">Kéo cà rốt vào 2 đĩa để tạo phép tính rồi chọn bóng đáp án đúng!</p>
+
+    <!-- KHO CHỨA CÀ RỐT -->
+    <div id="carrot-storage" class="zone"></div>
+
+    <!-- 2 VẾ CỦA PHÉP CỘNG -->
+    <div class="dishes-container">
+        <div id="plate-1" class="drop-zone zone"></div>
+        <div id="plate-2" class="drop-zone zone"></div>
+    </div>
+
+    <!-- BẢNG PHÉP TOÁN -->
+    <div>
+        <div id="math-display">
+            <span id="num1-text" class="highlight">0</span> + 
+            <span id="num2-text" class="highlight">0</span> = ?
+        </div>
+    </div>
+
+    <!-- TRẠNG THÁI BẠN THỎ -->
+    <div id="bunny-status">🐰</div>
+
+    <!-- BONG BÓNG ĐÁP ÁN -->
+    <div id="options-container">
+        <button class="balloon-btn bg-0" onclick="checkAnswer(this)" disabled>?</button>
+        <button class="balloon-btn bg-1" onclick="checkAnswer(this)" disabled>?</button>
+        <button class="balloon-btn bg-2" onclick="checkAnswer(this)" disabled>?</button>
+    </div>
+
+    <div id="feedback"></div>
+    <button class="btn-reset" onclick="resetGame()">Làm lại từ đầu</button>
+</div>
+
+<!-- Nhúng tệp javascript xử lý logic -->
+<script src="script.js"></script>
+
+</body>
+</html>
