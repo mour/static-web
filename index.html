@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bé Tự Tạo Phép Tính Cộng - Giải Cứu Thỏ Con</title>
+    <title>Kids Math - Feed the Bunny</title>
     <style>
         body {
             margin: 0; padding: 0;
@@ -23,6 +23,7 @@
             text-align: center;
             box-shadow: 0 10px 30px rgba(0,0,0,0.15);
             position: relative;
+            overflow: hidden;
         }
 
         h1 {
@@ -32,7 +33,7 @@
 
         p.instruction { color: #555; font-size: 14px; margin: 5px 0 15px 0; }
 
-        /* --- KHO CHỨA CÀ RỐT BAN ĐẦU --- */
+        /* --- KHO CHỨA CÀ RỐT --- */
         #carrot-storage {
             background: #E8F5E9;
             border: 3px dashed #81C784;
@@ -46,29 +47,57 @@
 
         .carrot {
             font-size: 32px; cursor: grab;
-            transition: transform 0.2s; display: inline-block;
+            transition: all 0.2s ease; display: inline-block;
             touch-action: none;
         }
         .carrot:active { cursor: grabbing; transform: scale(1.2); }
+        .carrot.picked { transform: scale(0) translateY(-50px); opacity: 0; }
 
         /* --- KHU VỰC 2 ĐĨA THỨ CĂN --- */
         .dishes-container {
             display: flex; justify-content: space-between; gap: 15px; margin: 15px 0;
+            position: relative;
         }
 
         .drop-zone {
             background: #FFF8E1;
             border: 4px solid #FFB300;
             border-radius: 20px;
-            padding: 15px 10px;
+            padding: 25px 10px 15px 10px;
             min-height: 80px; width: 45%;
             display: flex; flex-wrap: wrap;
             justify-content: center; align-items: center;
             gap: 6px; position: relative;
             box-shadow: inset 0 4px 8px rgba(0,0,0,0.05);
+            box-sizing: border-box;
         }
-        #plate-1::before { content: "🍽️ ĐĨA SỐ 1"; position: absolute; top: 4px; font-size: 10px; color: #FFA000; font-weight: bold; }
-        #plate-2::before { content: "🍽️ ĐĨA SỐ 2"; position: absolute; top: 4px; font-size: 10px; color: #FFA000; font-weight: bold; }
+        #plate-1::before { content: "🍽️ PLATE 1"; position: absolute; top: 4px; font-size: 10px; color: #FFA000; font-weight: bold; }
+        #plate-2::before { content: "🍽️ PLATE 2"; position: absolute; top: 4px; font-size: 10px; color: #FFA000; font-weight: bold; }
+
+        /* --- ẢNH CHÚ THỎ CHẠY QUA NHẶT CÀ RỐT --- */
+        #bunny-gatherer {
+            position: absolute;
+            bottom: 5px;
+            left: -100px;
+            z-index: 5;
+            display: none;
+            pointer-events: none;
+            width: 80px; height: 80px;
+        }
+
+        .run-across {
+            display: block !important;
+            animation: runAnimation 3.5s linear forwards;
+        }
+
+        @keyframes runAnimation {
+            0% { left: -80px; }
+            25% { left: 80px; transform: translateY(-5px); }
+            45% { left: 80px; transform: translateY(0); }
+            55% { left: 280px; transform: translateY(-5px); }
+            75% { left: 280px; transform: translateY(0); }
+            100% { left: 520px; }
+        }
 
         /* --- HIỂN THỊ PHÉP TOÁN --- */
         #math-display {
@@ -78,16 +107,18 @@
         }
         .highlight { color: #FF5722; font-weight: bold; }
 
-        /* --- BẠN THỎ VÀ HIỆU ỨNG LẮC ĐẦU BUỒN --- */
+        /* --- KHUNG CHỨA ẢNH CHÚ THỎ CHÍNH --- */
         #bunny-status { 
-            font-size: 45px; margin: 10px 0; 
-            display: inline-block; transition: all 0.3s;
+            width: 110px; 
+            height: 110px;
+            margin: 5px auto;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
-        /* Hiệu ứng rung đầu buồn bã khi làm sai */
-        .sad-shake {
-            animation: shake 0.5s ease-in-out;
-        }
+        .sad-shake { animation: shake 0.5s ease-in-out; }
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
             20%, 60% { transform: translateX(-10px) rotate(-5deg); }
@@ -95,7 +126,7 @@
         }
 
         /* --- BONG BÓNG ĐÁP ÁN --- */
-        #options-container { display: flex; justify-content: space-around; margin-top: 20px; min-height: 110px;}
+        #options-container { display: flex; justify-content: space-around; margin-top: 15px; min-height: 110px;}
         .balloon-btn {
             width: 75px; height: 95px;
             border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%;
@@ -110,7 +141,7 @@
         .bg-1 { background-color: #4D96FF; }
         .bg-2 { background-color: #6BCB77; }
 
-        #feedback { font-size: 22px; font-weight: bold; height: 35px; margin-top: 10px; }
+        #feedback { font-size: 18px; font-weight: bold; height: 30px; margin-top: 5px; color: #444; }
         
         .btn-reset {
             background: #4FC3F7; color: white; border: none;
@@ -118,26 +149,26 @@
             cursor: pointer; font-weight: bold; margin-top: 5px;
         }
     </style>
-    
-    <!-- Nhúng thư viện pháo hoa tự động siêu nhẹ từ CDN (Hoàn toàn an toàn cho Webview/Android) -->
     <script src="https://jsdelivr.net"></script>
 </head>
 <body>
 
 <div id="game-container">
-    <h1>🐰 BÉ TỰ TẠO PHÉP TOÁN 🥕</h1>
-    <p class="instruction">Kéo cà rốt vào 2 đĩa để tạo phép tính rồi chọn bóng đáp án đúng!</p>
+    <h1>🐰 CREATE YOUR MATH! 🥕</h1>
+    <p class="instruction">Drag carrots to plates, then pop the correct balloon!</p>
 
-    <!-- KHO CHỨA CÀ RỐT -->
     <div id="carrot-storage" class="zone"></div>
 
-    <!-- 2 VẾ CỦA PHÉP CỘNG -->
     <div class="dishes-container">
         <div id="plate-1" class="drop-zone zone"></div>
         <div id="plate-2" class="drop-zone zone"></div>
+        
+        <!-- SỬ DỤNG ẢNH CỦA BẠN CHO THỎ ĐI NHẶT CÀ RỐT -->
+        <div id="bunny-gatherer">
+            <img src="bunny.png" alt="Bunny Gatherer" style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
     </div>
 
-    <!-- BẢNG PHÉP TOÁN -->
     <div>
         <div id="math-display">
             <span id="num1-text" class="highlight">0</span> + 
@@ -145,10 +176,11 @@
         </div>
     </div>
 
-    <!-- TRẠNG THÁI BẠN THỎ -->
-    <div id="bunny-status">🐰</div>
+    <!-- SỬ DỤNG ẢNH CỦA BẠN CHO THỎ BIỂU CẢM TRUNG TÂM -->
+    <div id="bunny-status">
+        <img id="bunny-pic" src="bunny.png" alt="My Cute Bunny" style="width: 100%; height: 100%; object-fit: contain;">
+    </div>
 
-    <!-- BONG BÓNG ĐÁP ÁN -->
     <div id="options-container">
         <button class="balloon-btn bg-0" onclick="checkAnswer(this)" disabled>?</button>
         <button class="balloon-btn bg-1" onclick="checkAnswer(this)" disabled>?</button>
@@ -156,11 +188,12 @@
     </div>
 
     <div id="feedback"></div>
-    <button class="btn-reset" onclick="resetGame()">Làm lại từ đầu</button>
+    <button class="btn-reset" onclick="resetGame()">Reset Game</button>
 </div>
 
-<!-- Nhúng tệp javascript xử lý logic -->
-<script src="script.js"></script>
+<!-- Đảm bảo nhúng đúng tên 2 file đã tách -->
+<script src="audio.js"></script>
+<script src="game.js"></script>
 
 </body>
 </html>
